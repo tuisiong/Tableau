@@ -1,0 +1,12 @@
+##Tableau
+
+###check if value start with.. using REGEX
+
+// [Privileged Account Flag]
+IF REGEXP_MATCH(
+     LOWER([Samaccountname]),
+     '^(?:!si|as|asi)[0-9]+$'
+) THEN
+    "Privileged Account"
+ELSE "Standard Account"
+END
