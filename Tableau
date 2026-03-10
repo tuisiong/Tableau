@@ -10,3 +10,31 @@ IF REGEXP_MATCH(
     "Privileged Account"
 ELSE "Standard Account"
 END
+
+
+###check if value start with.. using REGEX and replace start of string using REGEX
+
+IF REGEXP_MATCH(
+     LOWER(TRIM([Login])),
+     '^(?:!si|as|asi)[0-9]+$'
+) THEN
+    // It's a privileged account: normalize the identity
+    // Normalize "!si####" → "si####"
+    IF STARTSWITH(LOWER(TRIM([Login])), '!si') THEN 
+        REGEXP_REPLACE(LOWER(TRIM([Login])), '^!si', 'si')
+    ELSEIF
+        // Normalize "as####" → "s####"
+        STARTSWITH(LOWER(TRIM([Login])), 'as') THEN
+        // Replace leading "as" with "s"
+        REGEXP_REPLACE(LOWER(TRIM([Login])), '^as', 's')
+
+    ELSE
+        // Normalize "asi####" → "si####"
+        //STARTSWITH(LOWER(TRIM([[Login]])), 'as') THEN
+        // Replace leading "asi" with "si"
+        REGEXP_REPLACE(LOWER(TRIM([Login])), '^asi', 'si')
+    END
+ELSE
+    // Non-privileged use the original (lowercased) as the identity key
+    LOWER(TRIM([Login]))
+END
