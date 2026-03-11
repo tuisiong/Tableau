@@ -46,3 +46,43 @@ REGEXP_EXTRACT(
  // '\(\s*((?:!si|as)[0-9]+@[a-z0-9]+)\s*\)'
 '\(\s*((?:!si|as|s|ca|si)[0-9]+)\s*\)'
 )
+
+
+// [Display Suffix Extracted]
+
+// Helper triggers (inline):
+//  - Bracketed account: (...), where inside is !si|as + digits, optional "@"+alphanum
+//  - Group words present: G_, Local Admin, LocalAdministrator, Administrator(s)
+
+IF
+    // Trigger A: account pattern inside parentheses
+    REGEXP_MATCH(
+      LOWER(TRIM([Display Name])),
+  //    '.*\(\s*(?:!si|as|s|si)[0-9]+(?:@[a-z0-9]+)?\s*\).*'
+      '.*\(\s*(?:!si|as|s|ca|si)[0-9]+?\s*\).*'
+    )
+    // OR Trigger B: group-related words present
+    OR CONTAINS(UPPER([Display Name]), 'G_')
+    OR CONTAINS(LOWER([Display Name]), 'local admin')
+    OR CONTAINS(LOWER([Display Name]), 'localadministrator')
+    OR CONTAINS(LOWER([Display Name]), 'administrators')
+    OR CONTAINS(LOWER([Display Name]), 'administrator')
+
+THEN
+    // Prefer the " - " delimiter
+    IF FIND([Display Name], ' - ') > 0 THEN
+        TRIM( MID([Display Name], FIND([Display Name], ' - ') + 3) )
+
+    // Fallback to the "): " delimiter
+    ELSEIF FIND([Display Name], '): ') > 0 THEN
+        TRIM( MID([Display Name], FIND([Display Name], '): ') + 3) )
+
+    // If neither delimiter is present, just return the original
+    ELSE
+        [Display Name]
+    END
+
+ELSE
+    // No trigger → leave as-is
+    [Display Name]
+END
