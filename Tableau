@@ -48,39 +48,74 @@ REGEXP_EXTRACT(
 )
 
 
-// [Display Suffix Extracted]
 
-// Helper triggers (inline):
-//  - Bracketed account: (...), where inside is !si|as + digits, optional "@"+alphanum
-//  - Group words present: G_, Local Admin, LocalAdministrator, Administrator(s)
+// [Display Suffix Extracted (Trigger A with Role nuance)]
 
-IF
-    // Trigger A: account pattern inside parentheses
-    REGEXP_MATCH(
-      LOWER(TRIM([Display Name])),
-  //    '.*\(\s*(?:!si|as|s|si)[0-9]+(?:@[a-z0-9]+)?\s*\).*'
+// Trigger A regex: (...) contains !si|as + digits, optional "@"+alphanum (case-insensitive via LOWER)
+IF REGEXP_MATCH(
+       LOWER(TRIM([Display Name])),
+      // '.*\(\s*(?:!si|as)[0-9]+(?:@[a-z0-9]+)?\s*\).*'
       '.*\(\s*(?:!si|as|s|ca|si)[0-9]+?\s*\).*'
-    )
-    // OR Trigger B: group-related words present
-    OR CONTAINS(UPPER([Display Name]), 'G_')
+   ) THEN
+
+    // Secondary check for role words (case-insensitive)
+    IF CONTAINS(LOWER([Display Name]), 'individual role')
+       OR CONTAINS(LOWER([Display Name]), 'application role')
+    THEN
+        // Need the substring after the SECOND " - "
+        IF FIND([Display Name], ' - ') > 0 THEN
+            // Find the second occurrence starting after the first one
+            IF FIND([Display Name], ' - ', FIND([Display Name], ' - ') + 3) > 0 THEN
+                TRIM(
+                    MID(
+                        [Display Name],
+                        FIND([Display Name], ' - ', FIND([Display Name], ' - ') + 3) + 3
+                    )
+                )
+            ELSE
+                // Only one " - " present → fall back to after the first " - "
+                TRIM( MID([Display Name], FIND([Display Name], ' - ') + 3) )
+            END
+        // No " - " → fall back to after "): "
+        ELSEIF FIND([Display Name], '): ') > 0 THEN
+            TRIM( MID([Display Name], FIND([Display Name], '): ') + 3) )
+        ELSE
+            // No delimiters → return original
+            [Display Name]
+        END
+
+    ELSE
+        // Trigger A matched, but no role words → use the standard first-delimiter rule
+        IF FIND([Display Name], ' - ') > 0 THEN
+            TRIM( MID([Display Name], FIND([Display Name], ' - ') + 3) )
+        ELSEIF FIND([Display Name], '): ') > 0 THEN
+            TRIM( MID([Display Name], FIND([Display Name], '): ') + 3) )
+        ELSE
+            [Display Name]
+        END
+    END
+
+// Trigger B: group/admin words without bracketed account
+ELSEIF CONTAINS(UPPER([Display Name]), 'G_')
+    OR CONTAINS(LOWER([Display Name]), 'adms_')
     OR CONTAINS(LOWER([Display Name]), 'local admin')
     OR CONTAINS(LOWER([Display Name]), 'localadministrator')
-    OR CONTAINS(LOWER([Display Name]), 'administrators')
-    OR CONTAINS(LOWER([Display Name]), 'administrator')
-
+    OR CONTAINS(LOWER([Display Name]), 'administrators')  // check plural first
+    OR CONTAINS(LOWER([Display Name]), 'administrator')   // then singular
 THEN
-    // Prefer the " - " delimiter
     IF FIND([Display Name], ' - ') > 0 THEN
         TRIM( MID([Display Name], FIND([Display Name], ' - ') + 3) )
-
-    // Fallback to the "): " delimiter
     ELSEIF FIND([Display Name], '): ') > 0 THEN
         TRIM( MID([Display Name], FIND([Display Name], '): ') + 3) )
-
-    // If neither delimiter is present, just return the original
     ELSE
         [Display Name]
     END
+
+// Default: return original
+ELSE
+    [Display Name]
+END
+
 
 ELSE
     // No trigger → leave as-is
