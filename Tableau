@@ -38,3 +38,11 @@ ELSE
     // Non-privileged use the original (lowercased) as the identity key
     LOWER(TRIM([Login]))
 END
+
+// Extracts e.g., "!si12345@abc" or "as987@iag" if it appears inside (...)
+REGEXP_EXTRACT(
+  //LOWER([Display Name]),
+[Display Name],
+ // '\(\s*((?:!si|as)[0-9]+@[a-z0-9]+)\s*\)'
+'\(\s*((?:!si|as|s|ca|si)[0-9]+)\s*\)'
+)
