@@ -121,3 +121,16 @@ ELSE
     // No trigger → leave as-is
     [Display Name]
 END
+
+
+
+// Returns the System Name whose count equals the global max.
+// MIN() over a string returns the lexicographically smallest string if there are ties.
+{ FIXED :
+    MIN(
+        IF { FIXED [System Name] : COUNT([System Name]) }  = { FIXED : MAX( {FIXED[System Name] : COUNT([System Name])} )}
+        THEN [System Name]
+        END
+    )
+}
+
