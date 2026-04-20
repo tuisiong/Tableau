@@ -2,13 +2,53 @@
 
 ###check if value start with.. using REGEX
 
-// [Privileged Account Flag]
+// [Privileged Account Flag] – corrected precedence
+
+
 IF REGEXP_MATCH(
-     LOWER([Samaccountname]),
-     '^(?:!si|as|asi)[0-9]+$'
+    LOWER([User Principal Name]),
+    '^ca[0-9]+@'
+) THEN
+    "Cloud Admin"
+
+ELSEIF  REGEXP_MATCH(
+    LOWER([User Principal Name]),
+    '^(?:!si|as|asi|ca)[0-9]+'
 ) THEN
     "Privileged Account"
-ELSE "Standard Account"
+
+ELSEIF REGEXP_MATCH(
+    LOWER([User Principal Name]),
+    '#ext#@iagau\.onmicrosoft\.com$'
+) THEN
+    "External Guest"
+
+ELSEIF REGEXP_MATCH(
+    LOWER([User Principal Name]),
+    '^(?:si|s)[0-9]+'
+) THEN
+    "Standard Account"
+
+/* block obvious non-human accounts */
+ELSEIF REGEXP_MATCH(
+    LOWER([User Principal Name]),
+    '^(admin|support|service|svc|test)[^@]*@'
+) THEN
+    "GENERIC"
+
+/* human email accounts */
+
+ELSEIF REGEXP_MATCH(
+    LOWER([User Principal Name]),
+    //'^[a-z0-9]+\\.[a-z0-9]+@'
+    //'^[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,}$'
+    '^[a-z0-9._%+''-]+@'
+
+) THEN
+    "Standard Account"
+
+ELSE
+    "Unknown"
 END
 
 
