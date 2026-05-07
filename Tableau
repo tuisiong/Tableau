@@ -174,3 +174,78 @@ END
     )
 }
 
+
+
+// [AccountTypes]
+
+IF  CONTAINS(LOWER([User Principal Name]), "robo")
+    OR CONTAINS(LOWER([User Principal Name]), "automation"
+) THEN
+    "Robot"
+
+ELSEIF REGEXP_MATCH(
+    LOWER([User Principal Name]),
+    '^ca[0-9]+@'
+) THEN
+    "Cloud Admin"
+
+ELSEIF  REGEXP_MATCH(
+    LOWER([User Principal Name]),
+    '^(?:!si|as|asi|ca)[0-9]+'
+) THEN
+    "Privileged Account"
+
+ELSEIF REGEXP_MATCH(
+    LOWER([User Principal Name]),
+    '#ext#@iagau\.onmicrosoft\.com$'
+) THEN
+    "External Guest"
+
+ELSEIF REGEXP_MATCH(
+    LOWER([User Principal Name]),
+    '^(?:si|s)[0-9]+'
+) THEN
+    "Standard Account"
+
+/* block obvious non-human accounts */
+ELSEIF REGEXP_MATCH(
+    LOWER([User Principal Name]),
+    '^(admin|support|service|svc|test|workx|centre)[^@]*@'
+) THEN
+    "Generic"
+
+/* Generic accounts:
+   - no dot before @
+   - OR contains 'test'
+*/
+ELSEIF
+    REGEXP_MATCH(
+        LOWER([User Principal Name]),
+        '^[^.@]+@'
+    )
+    OR CONTAINS(LOWER([User Principal Name]), 'test')
+THEN
+    "Generic"
+
+/* meeting room state codes + numbers + MR, PR, TR */
+ELSEIF
+     REGEXP_MATCH(
+        LOWER([User Principal Name]),
+        '^(act|wa|nsw|vic|sa|qld)[0-9]{1}[^@]*(cs|mf|mr|pr|tr|event)[^@]*@')
+THEN
+    "Meeting Room"
+
+/* human email accounts */
+
+ELSEIF REGEXP_MATCH(
+    LOWER([User Principal Name]),
+    //'^[a-z0-9]+\\.[a-z0-9]+@'
+    //'^[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,}$'
+    '^[a-z0-9._%+''-]+@'
+
+) THEN
+    "Standard Account"
+
+ELSE
+    "Unknown"
+END
